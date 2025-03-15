@@ -1,0 +1,16 @@
+@media screen and (max-width: 420px) {
+  .dice-box {
+    display: grid;
+    grid-template: auto / repeat(4, 1fr);
+    gap: 10px;
+    width: 100%;
+    padding: 10px;
+  }
+
+  main {
+    width: calc(100% - 20px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
