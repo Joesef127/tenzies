@@ -3,6 +3,7 @@ import './App.css';
 import './mobile.css';
 import Dice from './components/Dice';
 import Win from './components/Win';
+import Header from './components/Header';
 
 export default function App() {
   const [dices, setDices] = useState(allNewDice());
@@ -11,150 +12,159 @@ export default function App() {
   const [rolls, setRolls] = useState(0);
   const [clicks, setClicks] = useState(0);
   const [score, setScore] = useState(0);
-  const [level, setLevel] = useState({
-    easy: 10,
-    medium: 20,
-    hard: 50,
-  });
+  const [timeTaken, setTimeTaken] = useState(0);
+  const [startTime, setStartTime] = useState(null);
+  const [difficulty, setDifficulty] = useState('easy');
+
+  const level = { easy: 10, medium: 20, hard: 50 };
+
+  useEffect(() => {
+    if (!tenzies) {
+      setStartTime(Date.now());
+    }
+  }, [tenzies]);
 
   useEffect(() => {
     const allHeld = dices.every((dice) => dice.isHeld);
     const firstValue = dices[0].value;
     const allSameValue = dices.every((dice) => dice.value === firstValue);
 
-    const heldDice = dices.filter((dice) => dice.isHeld === true).length;
-
-    const calculatedScore =
-      rolls && clicks && heldDice
-        ? Math.floor((clicks * heldDice) / rolls) * 10
-        : 0;
-
-    // console.log('rolls: ', rolls);
-    // console.log('clicks: ', clicks);
-    // console.log('held dice: ', heldDice);
-    // console.log('calculated score:', calculatedScore);
-
-    setScore(calculatedScore);
-
     if (allHeld && allSameValue) {
       setTenzies(true);
       openModal();
-      localStorage.setItem('highScore', calculatedScore);
-      const storedScore = localStorage.getItem('highScore');
-      const highScore =
-        calculatedScore > JSON.parse(storedScore)
-          ? storedScore
-          : calculatedScore;
-      localStorage.setItem('highScore', highScore);
-      console.log('stored high score: ', highScore);
+      const endTime = Date.now();
+      const timeElapsed = Math.floor((endTime - startTime) / 1000);
+      setTimeTaken(timeElapsed);
+      
+      const baseScore = 1000 + rolls * 50 - timeElapsed * 10;
+      
+      console.log('base score: ', baseScore);
+      const bonusPoints = rolls <= 5 ? 200 : 0;
+      const finalScore = baseScore > 0 ? baseScore + bonusPoints : 0;
+      
+      console.log('final score: ',finalScore);
+      console.log('time taken: ', timeElapsed)
+
+      localStorage.setItem('highScores', JSON.stringify(finalScore));
+      // localStorage.setItem('bestTime', JSON.stringify(timeElapsed));
+      
+      setScore(finalScore);
+      updateHighScore(finalScore);
+      // updateTimeTaken(timeElapsed);
     }
-  }, [dices]);
+  }, [dices, timeTaken]);
+
+  function updateHighScore(newScore) {
+    const storedScores = JSON.parse(localStorage.getItem('highScores'));
+
+    if (newScore > storedScores[difficulty]) {
+      storedScores[difficulty] = newScore;
+      localStorage.setItem('highScores', JSON.stringify(storedScores));
+    }
+  }
+
+  // function updateTimeTaken(newTime) {
+  //   const storedTime = JSON.parse(localStorage.getItem('bestTime'));
+
+  //   if (newTime < storedTime[difficulty]) {
+  //     console.log(storedTime[difficulty])
+  //     storedTime[difficulty] = newTime;
+  //     localStorage.setItem('bestTime', JSON.stringify(storedTime));
+  //   }
+  // }
 
   function changeLevel(event) {
-    const { value } = event.target;
-    const newArray = [];
-    for (let i = 0; i < value; i++) {
-      newArray.push(generateNewDie(i));
-    }
-    // console.log('level changed', newArray);
-    setDices(newArray);
+    const newDifficulty = event.target.value;
+    setDifficulty(newDifficulty);
+    setDices(allNewDice(level[newDifficulty]));
   }
 
   function generateNewDie(id) {
-    const randomIndex = Math.ceil(Math.random() * 6);
-    return { value: randomIndex, isHeld: false, id: id };
+    return { value: Math.ceil(Math.random() * 6), isHeld: false, id };
   }
 
-  function allNewDice() {
+  function allNewDice(count = 10) {
     const diceArray = [];
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < count; i++) {
       diceArray.push(generateNewDie(i));
     }
     return diceArray;
   }
 
   function diceRoll() {
-    setDices((prevDice) =>
-      prevDice.map((die) => {
-        return die.isHeld ? die : generateNewDie(die.id);
-      })
-    );
-    setRolls((prevRolls) => prevRolls + 1);
+    if (!tenzies) {
+      setDices((prevDice) =>
+        prevDice.map((die) => (die.isHeld ? die : generateNewDie(die.id)))
+      );
+      setRolls((prev) => prev + 1);
+    } else {
+      restartGame();
+    }
   }
 
   function holdDice(id) {
     setDices((prevDice) =>
-      prevDice.map((die) => {
-        return die.id === id ? { ...die, isHeld: !die.isHeld } : die;
-      })
+      prevDice.map((die) =>
+        die.id === id ? { ...die, isHeld: !die.isHeld } : die
+      )
     );
-    setClicks((prevClick) => prevClick + 1);
-  }
-
-  const diceElements = dices.map((dice) => (
-    <Dice
-      key={dice.id}
-      value={dice.value}
-      isHeld={dice.isHeld}
-      // id={dice.id}
-      holdDice={() => holdDice(dice.id)}
-    />
-  ));
-
-  function closeModal() {
-    setIsOpen((prevModal) => !prevModal);
-  }
-
-  function openModal() {
-    setIsOpen((prevModal) => !prevModal);
+    setClicks((prev) => prev + 1);
   }
 
   function restartGame() {
-    setDices(allNewDice());
-    setIsOpen(false);
+    setDices(allNewDice(level[difficulty]));
     setTenzies(false);
     setRolls(0);
     setClicks(0);
+    setTimeTaken(0);
+    setStartTime(Date.now());
+  }
+
+  function openModal() {
+    setIsOpen(true);
+  }
+
+  function closeModal() {
+    setIsOpen(false);
   }
 
   return (
     <main>
       <div className="container">
-        <div
-          className="modal-overlay"
-          style={isOpen ? { display: 'flex' } : { display: 'none' }}
-        >
-          <Win
-            closeModal={closeModal}
-            restartGame={restartGame}
-            rolls={rolls}
-            clicks={clicks}
-          />
+        {isOpen && (
+          <div className="modal-overlay">
+            <Win
+              closeModal={closeModal}
+              restartGame={restartGame}
+              rolls={rolls}
+              clicks={clicks}
+              score={score}
+              timeTaken={timeTaken}
+            />
+          </div>
+        )}
+
+        <Header difficulty={difficulty} changeLevel={changeLevel} />
+        <div className="game-instructions">
+          <p>Roll until all dice are the same. Click a die to freeze it.</p>
+          <p> Check menu to check high scores change difficulty</p>
         </div>
-        <div className="header">
-          <h1>Tenzies</h1>
-          <select
-            name="level"
-            id="level"
-            defaultValue={level.easy}
-            onChange={changeLevel}
-          >
-            <option value={level.easy}>Easy</option>
-            <option value={level.medium}>Medium</option>
-            <option value={level.hard}>Hard</option>
-          </select>
+        <div className="dice-box">
+          {dices.map((dice) => (
+            <Dice
+              key={dice.id}
+              value={dice.value}
+              isHeld={dice.isHeld}
+              holdDice={() => holdDice(dice.id)}
+            />
+          ))}
         </div>
-        <p>
-          Roll until all dice are the same. Click die to freeze it at it's
-          current value between rolls
-        </p>
-        <div className="dice-box">{diceElements}</div>
 
         <div className="btn-box">
-          <button className="roll" onClick={tenzies ? restartGame : diceRoll}>
+          <button className="roll" onClick={diceRoll}>
             {tenzies ? 'New Game' : 'Roll'}
           </button>
-          <button className="roll-blank">Score: {score}</button>
+          {/* <button className="roll-blank">Score: {score}</button> */}
         </div>
       </div>
     </main>
