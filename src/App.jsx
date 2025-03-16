@@ -6,7 +6,7 @@ import Win from './components/Win';
 import Header from './components/Header';
 
 export default function App() {
-  const [dices, setDices] = useState(allNewDice());
+  const [dices, setDices] = useState(() => allNewDice());
   const [isOpen, setIsOpen] = useState(false);
   const [tenzies, setTenzies] = useState(false);
   const [rolls, setRolls] = useState(0);
@@ -19,14 +19,18 @@ export default function App() {
   const level = { easy: 10, medium: 20, hard: 50 };
 
   useEffect(() => {
-    if (!tenzies) {
+    setDices(allNewDice(level[difficulty]));
+  }, [difficulty]);
+
+  useEffect(() => {
+    if (rolls === 0) {
       setStartTime(Date.now());
     }
-  }, [tenzies]);
+  }, [rolls]);
 
   useEffect(() => {
     const allHeld = dices.every((dice) => dice.isHeld);
-    const firstValue = dices[0].value;
+    const firstValue = dices.length > 0 ? dices[0].value : null;
     const allSameValue = dices.every((dice) => dice.value === firstValue);
 
     if (allHeld && allSameValue) {
@@ -34,28 +38,26 @@ export default function App() {
       openModal();
       const endTime = Date.now();
       const timeElapsed = Math.floor((endTime - startTime) / 1000);
-      setTimeTaken(timeElapsed);
-      
-      const baseScore = 1000 + rolls * 50 - timeElapsed * 10;
-      
-      console.log('base score: ', baseScore);
-      const bonusPoints = rolls <= 5 ? 200 : 0;
-      const finalScore = baseScore > 0 ? baseScore + bonusPoints : 0;
-      
-      console.log('final score: ',finalScore);
-      console.log('time taken: ', timeElapsed)
 
-      localStorage.setItem('highScores', JSON.stringify(finalScore));
-      // localStorage.setItem('bestTime', JSON.stringify(timeElapsed));
-      
+      const baseScore = Math.floor(1000 + ((clicks * 50) / rolls) * 10);
+
+      const bonusPoints = rolls <= 10 ? 200 : 0;
+      const finalScore = baseScore > 0 ? baseScore + bonusPoints : 0;
+
+
       setScore(finalScore);
+      setTimeTaken(timeElapsed);
       updateHighScore(finalScore);
-      // updateTimeTaken(timeElapsed);
+      updateTimeTaken(timeElapsed);
     }
-  }, [dices, timeTaken]);
+  }, [dices]);
 
   function updateHighScore(newScore) {
-    const storedScores = JSON.parse(localStorage.getItem('highScores'));
+    const storedScores = JSON.parse(localStorage.getItem('highScores')) || {
+      easy: 0,
+      medium: 0,
+      hard: 0,
+    };
 
     if (newScore > storedScores[difficulty]) {
       storedScores[difficulty] = newScore;
@@ -63,20 +65,21 @@ export default function App() {
     }
   }
 
-  // function updateTimeTaken(newTime) {
-  //   const storedTime = JSON.parse(localStorage.getItem('bestTime'));
+  function updateTimeTaken(newTime) {
+    const storedTimes = JSON.parse(localStorage.getItem('bestTime')) || {
+      easy: 0,
+      medium: 0,
+      hard: 0,
+    };
 
-  //   if (newTime < storedTime[difficulty]) {
-  //     console.log(storedTime[difficulty])
-  //     storedTime[difficulty] = newTime;
-  //     localStorage.setItem('bestTime', JSON.stringify(storedTime));
-  //   }
-  // }
+    if (!storedTimes[difficulty] || newTime < storedTimes[difficulty]) {
+      storedTimes[difficulty] = newTime;
+      localStorage.setItem('bestTime', JSON.stringify(storedTimes));
+    }
+  }
 
   function changeLevel(event) {
-    const newDifficulty = event.target.value;
-    setDifficulty(newDifficulty);
-    setDices(allNewDice(level[newDifficulty]));
+    setDifficulty(event.target.value);
   }
 
   function generateNewDie(id) {
@@ -118,6 +121,7 @@ export default function App() {
     setClicks(0);
     setTimeTaken(0);
     setStartTime(Date.now());
+    // setIsOpen(false);
   }
 
   function openModal() {

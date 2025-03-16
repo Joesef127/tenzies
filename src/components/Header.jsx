@@ -1,8 +1,8 @@
-import React from 'react';
 import './Header.css';
 
 const Header = ({ difficulty, changeLevel }) => {
-  const highScore = JSON.parse(localStorage.getItem("highScores"));
+  const highScore = JSON.parse(localStorage.getItem('highScores'));
+  const bestTime = JSON.parse(localStorage.getItem('bestTime'));
   return (
     <div className="header">
       <nav role="navigation">
@@ -17,7 +17,12 @@ const Header = ({ difficulty, changeLevel }) => {
             <li>
               <a href="#about">
                 <label for="menuCheckbox" onclick="this.parentNode.click();">
-                  Best Play-time
+                  <ul>
+                    <li className="select-level">Best Time</li>
+                    <li>Easy: {bestTime ? bestTime.easy + 's' : 0}</li>
+                    <li>Medium: {bestTime ? bestTime.medium + 's': 0}</li>
+                    <li>Hard: {bestTime ? bestTime.hard + 's' : 0}</li>
+                  </ul>
                 </label>
               </a>
             </li>
@@ -25,10 +30,10 @@ const Header = ({ difficulty, changeLevel }) => {
               <a href="#about">
                 <label for="menuCheckbox" onclick="this.parentNode.click();">
                   <ul>
-                    <li className='select-level'>High Scores</li>
-                    <li>Easy: {highScore && highScore.easy}</li>
-                    <li>Medium: {highScore && highScore.medium}</li>
-                    <li>Hard: {highScore && highScore.hard}</li>
+                    <li className="select-level">High Scores</li>
+                    <li>Easy: {highScore? highScore.easy : 0}</li>
+                    <li>Medium: {highScore ? highScore.medium : 0}</li>
+                    <li>Hard: {highScore ? highScore.hard : 0}</li>
                   </ul>
                 </label>
               </a>
@@ -36,7 +41,7 @@ const Header = ({ difficulty, changeLevel }) => {
           </ul>
         </div>
       </nav>
-      <h2 className='game-name'>Tenzies</h2>
+      <h2 className="game-name">Tenzies</h2>
       <select
         className="select-level"
         name="level"
