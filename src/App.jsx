@@ -15,6 +15,7 @@ export default function App() {
   const [timeTaken, setTimeTaken] = useState(0);
   const [startTime, setStartTime] = useState(null);
   const [difficulty, setDifficulty] = useState('easy');
+  const [bonusPoints, setBonusPoints] = useState(0)
 
   const level = { easy: 10, medium: 20, hard: 50 };
 
@@ -39,13 +40,13 @@ export default function App() {
       const endTime = Date.now();
       const timeElapsed = Math.floor((endTime - startTime) / 1000);
 
-      const baseScore = Math.floor(1000 + ((clicks * 50) / rolls) * 10);
+      const baseScore = Math.floor(100 + (clicks * 50) / (rolls * 10));
 
-      const bonusPoints = rolls <= 10 ? 200 : 0;
+      const bonusPoint = rolls <= 10 ? 200 : 0;
       const finalScore = baseScore > 0 ? baseScore + bonusPoints : 0;
 
-
       setScore(finalScore);
+      setBonusPoints(bonusPoint);
       setTimeTaken(timeElapsed);
       updateHighScore(finalScore);
       updateTimeTaken(timeElapsed);
@@ -144,6 +145,7 @@ export default function App() {
               clicks={clicks}
               score={score}
               timeTaken={timeTaken}
+              bonusPoints={bonusPoints} 
             />
           </div>
         )}
