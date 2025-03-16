@@ -153,7 +153,7 @@ export default function App() {
         <Header difficulty={difficulty} changeLevel={changeLevel} />
         <div className="game-instructions">
           <p>Roll until all dice are the same. Click a die to freeze it.</p>
-          <p> Check menu to check high scores change difficulty</p>
+          <p> Check menu to check high scores</p>
         </div>
         <div className="dice-box">
           {dices.map((dice) => (
